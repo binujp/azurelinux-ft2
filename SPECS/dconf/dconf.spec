@@ -16,6 +16,7 @@ BuildRequires:  gcc
 BuildRequires:  glib2-devel >= %{glib2_version}
 BuildRequires:  gtk-doc
 BuildRequires:  meson
+BuildRequires:  systemd-rpm-macros
 BuildRequires:  vala
 Requires:       dbus
 Requires:       glib2 >= %{glib2_version}
@@ -78,6 +79,7 @@ dconf update
 %dir %{_sysconfdir}/dconf/db/distro.d
 %dir %{_sysconfdir}/dconf/db/distro.d/locks
 %dir %{_sysconfdir}/dconf/profile
+%config(noreplace) %{_sysconfdir}/dconf/profile/user
 %{_libdir}/gio/modules/libdconfsettings.so
 %{_libexecdir}/dconf-service
 %{_datadir}/dbus-1/services/ca.desrt.dconf.service
@@ -87,7 +89,6 @@ dconf update
 %{_mandir}/man1/dconf-service.1.gz
 %{_mandir}/man1/dconf.1.gz
 %{_mandir}/man7/dconf.7.gz
-%config(noreplace) %{_sysconfdir}/dconf/profile/user
 %{_userunitdir}/dconf.service
 
 %files devel
