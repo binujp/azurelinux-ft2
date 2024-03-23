@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
-func BuildImage(path string) {
+func BuildImage(path string) (err error) {
 	fmt.Println("Building image ...", path)
+	return
 }

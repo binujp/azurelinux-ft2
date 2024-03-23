@@ -5,8 +5,6 @@ package interfaceutils
 
 import (
 	"fmt"
-	"strings"
-
 )
 
 // buildStatus checks if spec needs to be rebuilt
@@ -15,7 +13,9 @@ import (
 //					- there is a change in spec from last build
 //					- there is a change in toolchain manifest
 //					- user wants to rebuild spec
-func buildStatus() {
+func buildStatus() (err error) {
+	fmt.Println("in buildStatus")
+	return
 
 }
 
@@ -25,8 +25,8 @@ func buildStatus() {
 //					- there is a change in toolchain spec(s)
 //					- there is a change in toolchain manifest
 //					- user wants to rebuild toolchain
-func buildStatusToolchain() {
-	buildStatus()
+func buildStatusToolchain() (rebuildOpt bool, err error) {
+	err = buildStatus()
 	// added if change in manifest files
-
+	return false, nil
 }
