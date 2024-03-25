@@ -1,0 +1,153 @@
+From d320ec78acdd34afb00b91c046933e150baa4daf Mon Sep 17 00:00:00 2001
+From: Chris PeBenito <chpebeni@linux.microsoft.com>
+Date: Mon, 25 Mar 2024 09:44:25 -0400
+Subject: [PATCH 15/24] various: Add new pidfd uses.
+
+Systemd is using more pidfds.
+
+Signed-off-by: Chris PeBenito <chpebeni@linux.microsoft.com>
+---
+ policy/modules/admin/cloudinit.if   | 18 ++++++++++++++++++
+ policy/modules/services/dbus.if     |  3 +++
+ policy/modules/services/dbus.te     |  2 ++
+ policy/modules/system/systemd.te    |  2 ++
+ policy/modules/system/unconfined.if | 18 ++++++++++++++++++
+ policy/modules/system/userdomain.if | 18 ++++++++++++++++++
+ 6 files changed, 61 insertions(+)
+
+diff --git a/policy/modules/admin/cloudinit.if b/policy/modules/admin/cloudinit.if
+index 7496b800a..6d427e771 100644
+--- a/policy/modules/admin/cloudinit.if
++++ b/policy/modules/admin/cloudinit.if
+@@ -1,5 +1,23 @@
+ ## <summary>Init scripts for cloud VMs</summary>
+ 
++########################################
++## <summary>
++##	Inherit and use cloud-init pidfds.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`cloudinit_use_pidfds',`
++	gen_require(`
++		type cloud_init_t;
++	')
++
++	allow $1 cloud_init_t:fd use;
++')
++
+ ########################################
+ ## <summary>
+ ##	Read cloud-init process state.
+diff --git a/policy/modules/services/dbus.if b/policy/modules/services/dbus.if
+index d13a53a52..8a636e3f4 100644
+--- a/policy/modules/services/dbus.if
++++ b/policy/modules/services/dbus.if
+@@ -158,6 +158,9 @@ interface(`dbus_system_bus_client',`
+ 	allow $1 { system_dbusd_t self }:dbus send_msg;
+ 	allow system_dbusd_t $1:dbus send_msg;
+ 
++	# pidfds:
++	allow system_dbusd_t $1:fd use;
++
+ 	files_search_var_lib($1)
+ 	read_files_pattern($1, system_dbusd_var_lib_t, system_dbusd_var_lib_t)
+ 	read_lnk_files_pattern($1, system_dbusd_var_lib_t, system_dbusd_var_lib_t)
+diff --git a/policy/modules/services/dbus.te b/policy/modules/services/dbus.te
+index 2d1d09d71..6ae874dd7 100644
+--- a/policy/modules/services/dbus.te
++++ b/policy/modules/services/dbus.te
+@@ -282,6 +282,8 @@ optional_policy(`
+ 
+ optional_policy(`
+ 	unconfined_dbus_send(system_dbusd_t)
++	# may be all userdomains instead:
++	unconfined_use_pidfds(system_dbusd_t)
+ ')
+ 
+ optional_policy(`
+diff --git a/policy/modules/system/systemd.te b/policy/modules/system/systemd.te
+index 222c89589..183c4c3fc 100644
+--- a/policy/modules/system/systemd.te
++++ b/policy/modules/system/systemd.te
+@@ -987,6 +987,7 @@ systemd_start_power_units(systemd_logind_t)
+ udev_list_runtime(systemd_logind_t)
+ udev_read_runtime_files(systemd_logind_t)
+ 
++userdom_use_all_users_pidfds(systemd_logind_t)
+ userdom_delete_all_user_runtime_dirs(systemd_logind_t)
+ userdom_delete_all_user_runtime_files(systemd_logind_t)
+ userdom_delete_all_user_runtime_named_pipes(systemd_logind_t)
+@@ -1032,6 +1033,7 @@ storage_raw_read_fixed_disk_cond(systemd_logind_t, systemd_logind_get_bootloader
+ 
+ optional_policy(`
+ 	cloudinit_read_state(systemd_logind_t)
++	cloudinit_use_pidfds(systemd_logind_t)
+ ')
+ 
+ optional_policy(`
+diff --git a/policy/modules/system/unconfined.if b/policy/modules/system/unconfined.if
+index 658fc2218..f556c1c0e 100644
+--- a/policy/modules/system/unconfined.if
++++ b/policy/modules/system/unconfined.if
+@@ -314,6 +314,24 @@ interface(`unconfined_use_fds',`
+ 	allow $1 unconfined_t:fd use;
+ ')
+ 
++########################################
++## <summary>
++##	Inherit and use pidfds from the unconfined domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`unconfined_use_pidfds',`
++	gen_require(`
++		type unconfined_t;
++	')
++
++	allow $1 unconfined_t:fd use;
++')
++
+ ########################################
+ ## <summary>
+ ##	Send a SIGCHLD signal to the unconfined domain.
+diff --git a/policy/modules/system/userdomain.if b/policy/modules/system/userdomain.if
+index 088cb87b2..492262498 100644
+--- a/policy/modules/system/userdomain.if
++++ b/policy/modules/system/userdomain.if
+@@ -4356,6 +4356,24 @@ interface(`userdom_lock_user_terminals',`
+ 	allow $1 user_devpts_t:chr_file lock;
+ ')
+ 
++########################################
++## <summary>
++##	Inherit and use all user pidfds
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed to transition.
++##	</summary>
++## </param>
++#
++interface(`userdom_use_all_users_pidfds',`
++	gen_require(`
++		attribute userdomain;
++	')
++
++	allow $1 userdomain:fd use;
++')
++
+ ########################################
+ ## <summary>
+ ##	Execute a shell in all user domains.  This
+-- 
+2.44.0
+
